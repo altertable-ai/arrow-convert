@@ -7,6 +7,7 @@ use arrow::{
     datatypes::{ArrowNativeType, DataType, Field},
 };
 use chrono::{NaiveDate, NaiveDateTime};
+use uuid;
 
 /// The default field name used when a specific name is not provided.
 pub const DEFAULT_FIELD_NAME: &str = "_item";
@@ -211,6 +212,15 @@ impl ArrowField for Vec<u8> {
     #[inline]
     fn data_type() -> DataType {
         DataType::Binary
+    }
+}
+
+impl ArrowField for uuid::Uuid {
+    type Type = Self;
+
+    #[inline]
+    fn data_type() -> DataType {
+        DataType::FixedSizeBinary(16)
     }
 }
 

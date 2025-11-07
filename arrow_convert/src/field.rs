@@ -7,7 +7,7 @@ use arrow::{
     datatypes::{ArrowNativeType, DataType, Field},
 };
 use chrono::{NaiveDate, NaiveDateTime};
-use uuid;
+use crate::uuid_crate::Uuid;
 
 /// The default field name used when a specific name is not provided.
 pub const DEFAULT_FIELD_NAME: &str = "_item";

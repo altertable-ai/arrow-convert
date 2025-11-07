@@ -19,6 +19,7 @@ arrow_convert = { path = "arrow_convert", version = "0.10.0" }
 arrow_convert_derive = { path = "arrow_convert_derive", version = "0.10.0" }
 
 arrow = { version = "56", default-features = false }
+arrow-schema = { version = "56", default-features = false, features = ["canonical_extension_types"] }
 chrono = { version = "0.4", default-features = false }
 criterion = "0.5"
 err-derive = "0.3"

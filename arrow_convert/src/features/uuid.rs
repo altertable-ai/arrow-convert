@@ -22,6 +22,12 @@ impl ArrowField for Uuid {
     fn data_type() -> DataType {
         DataType::FixedSizeBinary(16)
     }
+
+    #[inline]
+    fn field(name: &str) -> arrow::datatypes::Field {
+        arrow::datatypes::Field::new(name, Self::data_type(), Self::is_nullable())
+            .with_extension_type(arrow_schema::extension::Uuid)
+    }
 }
 
 impl ArrowDeserialize for Uuid {
@@ -30,6 +36,20 @@ impl ArrowDeserialize for Uuid {
     #[inline]
     fn arrow_deserialize(v: Option<&[u8]>) -> Option<Self> {
         v.and_then(|t| Uuid::from_slice(t).ok())
+    }
+}
+
+impl ArrowSerialize for Uuid {
+    type ArrayBuilderType = UuidBuilder;
+
+    #[inline]
+    fn new_array() -> Self::ArrayBuilderType {
+        Self::ArrayBuilderType::default()
+    }
+
+    #[inline]
+    fn arrow_serialize(v: &Self, array: &mut Self::ArrayBuilderType) -> Result<(), arrow::error::ArrowError> {
+        array.0.append_value(v.as_bytes())
     }
 }
 
@@ -65,20 +85,6 @@ impl ArrayBuilder for UuidBuilder {
 impl PushNull for UuidBuilder {
     fn push_null(&mut self) {
         self.0.append_null();
-    }
-}
-
-impl ArrowSerialize for Uuid {
-    type ArrayBuilderType = UuidBuilder;
-
-    #[inline]
-    fn new_array() -> Self::ArrayBuilderType {
-        Self::ArrayBuilderType::default()
-    }
-
-    #[inline]
-    fn arrow_serialize(v: &Self, array: &mut Self::ArrayBuilderType) -> Result<(), arrow::error::ArrowError> {
-        array.0.append_value(v.as_bytes())
     }
 }
 

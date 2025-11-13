@@ -1,4 +1,4 @@
-use arrow::array::*;
+use arrow_array::*;
 use arrow_convert::{deserialize::*, serialize::*, ArrowDeserialize, ArrowField, ArrowSerialize};
 
 #[test]

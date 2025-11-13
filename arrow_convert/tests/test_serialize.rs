@@ -1,13 +1,12 @@
-use arrow::array::{Array, ArrayRef};
-use arrow::buffer::{Buffer, ScalarBuffer};
-use arrow::record_batch::RecordBatch;
+use arrow_array::{Array, ArrayRef, RecordBatch};
+use arrow_buffer::{Buffer, ScalarBuffer};
 use arrow_convert::field::{ArrowField, FixedSizeBinary};
 use arrow_convert::serialize::*;
 
 #[test]
 fn test_error_exceed_fixed_size_binary() {
     let strs = [b"abc".to_vec()];
-    let r: arrow::error::Result<ArrayRef> = strs.try_into_arrow_as_type::<FixedSizeBinary<2>>();
+    let r: Result<ArrayRef, arrow_schema::ArrowError> = strs.try_into_arrow_as_type::<FixedSizeBinary<2>>();
     assert!(r.is_err())
 }
 
@@ -70,17 +69,17 @@ fn test_buffer() {
 //         type Type = Self;
 
 //         #[inline]
-//         fn data_type() -> arrow::datatypes::DataType {
-//             arrow::datatypes::DataType::Extension(
+//         fn data_type() -> arrow_schema::DataType {
+//             arrow_schema::DataType::Extension(
 //                 "custom".to_string(),
-//                 Box::new(arrow::datatypes::DataType::UInt64),
+//                 Box::new(arrow_schema::DataType::UInt64),
 //                 None,
 //             )
 //         }
 //     }
 
 //     impl arrow_convert::serialize::ArrowSerialize for CustomType {
-//         type ArrayBuilderType = arrow::array::UInt64Builder;
+//         type ArrayBuilderType = arrow_array::builder::UInt64Builder;
 
 //         #[inline]
 //         fn new_array() -> Self::ArrayBuilderType {
@@ -88,13 +87,13 @@ fn test_buffer() {
 //         }
 
 //         #[inline]
-//         fn arrow_serialize(_: &Self, _: &mut Self::ArrayBuilderType) -> arrow::error::Result<()> {
-//             Err(arrow::error::Error::NotYetImplemented("".to_owned()))
+//         fn arrow_serialize(_: &Self, _: &mut Self::ArrayBuilderType) -> Result<(), arrow_schema::ArrowError> {
+//             Err(arrow_schema::ArrowError::NotYetImplemented("".to_owned()))
 //         }
 //     }
 
 //     impl arrow_convert::deserialize::ArrowDeserialize for CustomType {
-//         type ArrayType = arrow::array::PrimitiveArray<u64>;
+//         type ArrayType = arrow_array::PrimitiveArray<u64>;
 
 //         #[inline]
 //         fn arrow_deserialize(v: Option<&u64>) -> Option<Self> {
@@ -103,6 +102,6 @@ fn test_buffer() {
 //     }
 
 //     let arr = vec![CustomType(0)];
-//     let r: arrow::error::Result<ArrayRef> = arr.try_into_arrow();
+//     let r: Result<ArrayRef, arrow_schema::ArrowError> = arr.try_into_arrow();
 //     assert!(r.is_err())
 // }

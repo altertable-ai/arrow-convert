@@ -1,7 +1,10 @@
-use arrow::{array::*, datatypes::*};
+use arrow_array::builder::*;
+use arrow_array::*;
 use arrow_convert::{
     deserialize::TryIntoCollection, serialize::TryIntoArrow, ArrowDeserialize, ArrowField, ArrowSerialize,
 };
+use arrow_schema::UnionMode;
+use arrow_schema::{DataType, Field, UnionFields};
 use pretty_assertions::assert_eq;
 
 #[test]

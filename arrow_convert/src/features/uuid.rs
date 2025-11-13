@@ -8,11 +8,9 @@ use crate::deserialize::ArrowDeserialize;
 use crate::field::ArrowField;
 use crate::serialize::ArrowSerialize;
 use crate::serialize::PushNull;
-use arrow::array::builder::FixedSizeBinaryBuilder;
-use arrow::array::ArrayBuilder;
-use arrow::array::ArrayRef;
-use arrow::array::FixedSizeBinaryArray;
-use arrow::datatypes::DataType;
+use arrow_array::builder::FixedSizeBinaryBuilder;
+use arrow_array::{builder::ArrayBuilder, ArrayRef, FixedSizeBinaryArray};
+use arrow_schema::DataType;
 use uuid::Uuid;
 
 impl ArrowField for Uuid {
@@ -24,8 +22,8 @@ impl ArrowField for Uuid {
     }
 
     #[inline]
-    fn field(name: &str) -> arrow::datatypes::Field {
-        arrow::datatypes::Field::new(name, Self::data_type(), Self::is_nullable())
+    fn field(name: &str) -> arrow_schema::Field {
+        arrow_schema::Field::new(name, Self::data_type(), Self::is_nullable())
             .with_extension_type(arrow_schema::extension::Uuid)
     }
 }
@@ -48,7 +46,7 @@ impl ArrowSerialize for Uuid {
     }
 
     #[inline]
-    fn arrow_serialize(v: &Self, array: &mut Self::ArrayBuilderType) -> Result<(), arrow::error::ArrowError> {
+    fn arrow_serialize(v: &Self, array: &mut Self::ArrayBuilderType) -> Result<(), arrow_schema::ArrowError> {
         array.0.append_value(v.as_bytes())
     }
 }

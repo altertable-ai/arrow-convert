@@ -1,5 +1,4 @@
-use arrow::array::*;
-use arrow::datatypes::*;
+use arrow_array::*;
 use arrow_convert::deserialize::arrow_array_deserialize_iterator_as_type;
 use arrow_convert::deserialize::*;
 use arrow_convert::field::DEFAULT_FIELD_NAME;
@@ -9,6 +8,7 @@ use arrow_convert::{
     field::{FixedSizeBinary, FixedSizeVec, LargeString, LargeVec},
     ArrowDeserialize, ArrowField, ArrowSerialize,
 };
+use arrow_schema::{DataType, Field};
 use half::f16;
 use std::sync::Arc;
 

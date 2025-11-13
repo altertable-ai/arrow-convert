@@ -1,5 +1,5 @@
 /// Simple example
-use arrow::array::{Array, ArrayRef};
+use arrow_array::{Array, ArrayRef};
 use arrow_convert::{
     deserialize::TryIntoCollection, serialize::TryIntoArrow, ArrowDeserialize, ArrowField, ArrowSerialize,
 };
@@ -28,10 +28,7 @@ fn main() {
 
     // which can be cast to an Arrow StructArray and be used for all kinds of IPC, FFI, etc.
     // supported by `arrow`
-    let struct_array = arrow_array
-        .as_any()
-        .downcast_ref::<arrow::array::StructArray>()
-        .unwrap();
+    let struct_array = arrow_array.as_any().downcast_ref::<arrow_array::StructArray>().unwrap();
     assert_eq!(struct_array.len(), 3);
 
     // deserialize back to our original vector via TryIntoCollection trait.

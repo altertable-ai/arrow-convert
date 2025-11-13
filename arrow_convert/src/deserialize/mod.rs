@@ -2,11 +2,8 @@
 mod iterable;
 pub use iterable::*;
 
-use arrow::{
-    array::*,
-    buffer::{Buffer, ScalarBuffer},
-    datatypes::{self, ArrowNativeType, ArrowPrimitiveType, Decimal128Type},
-};
+use arrow_array::{types as datatypes, ArrowPrimitiveType, *};
+use arrow_buffer::{ArrowNativeType, Buffer, ScalarBuffer};
 use chrono::{NaiveDate, NaiveDateTime};
 
 use crate::field::*;
@@ -16,7 +13,7 @@ pub trait ArrowDeserialize: ArrowField + Sized
 where
     Self::ArrayType: ArrowArray,
 {
-    /// The `arrow::Array` type corresponding to this field
+    /// The `arrow_array::Array` type corresponding to this field
     type ArrayType;
 
     /// Deserialize this field from arrow
@@ -114,7 +111,7 @@ impl_arrow_deserialize_primitive!(f32, datatypes::Float32Type);
 impl_arrow_deserialize_primitive!(f64, datatypes::Float64Type);
 
 impl<const PRECISION: u8, const SCALE: i8> ArrowDeserialize for I128<PRECISION, SCALE> {
-    type ArrayType = PrimitiveArray<Decimal128Type>;
+    type ArrayType = PrimitiveArray<datatypes::Decimal128Type>;
 
     #[inline]
     fn arrow_deserialize<'a>(v: Option<i128>) -> Option<i128> {
@@ -122,7 +119,7 @@ impl<const PRECISION: u8, const SCALE: i8> ArrowDeserialize for I128<PRECISION, 
     }
 }
 
-impl_arrow_array!(PrimitiveArray<Decimal128Type>);
+impl_arrow_array!(PrimitiveArray<datatypes::Decimal128Type>);
 
 impl ArrowDeserialize for String {
     type ArrayType = StringArray;
@@ -156,7 +153,7 @@ impl ArrowDeserialize for NaiveDateTime {
 
     #[inline]
     fn arrow_deserialize(v: Option<i64>) -> Option<Self> {
-        v.and_then(arrow::temporal_conversions::timestamp_ns_to_datetime)
+        v.and_then(temporal_conversions::timestamp_ns_to_datetime)
     }
 }
 
@@ -165,7 +162,7 @@ impl ArrowDeserialize for NaiveDate {
 
     #[inline]
     fn arrow_deserialize(v: Option<i32>) -> Option<Self> {
-        v.and_then(|t| arrow::temporal_conversions::as_date::<datatypes::Date32Type>(t as i64))
+        v.and_then(|t| temporal_conversions::as_date::<datatypes::Date32Type>(t as i64))
     }
 }
 
@@ -373,20 +370,20 @@ pub trait TryIntoCollection<Collection, Element>
 where
     Collection: FromIterator<Element>,
 {
-    /// Convert from a `arrow::Array` to any collection that implements the `FromIterator` trait
-    fn try_into_collection(self) -> arrow::error::Result<Collection>
+    /// Convert from a `arrow_array::Array` to any collection that implements the `FromIterator` trait
+    fn try_into_collection(self) -> Result<Collection, arrow_schema::ArrowError>
     where
         Element: ArrowDeserialize + ArrowField<Type = Element> + 'static;
 
     /// Same as `try_into_collection` except can coerce the conversion to a specific Arrow type. This is
     /// useful when the same rust type maps to one or more Arrow types for example `LargeString`.
-    fn try_into_collection_as_type<ArrowType>(self) -> arrow::error::Result<Collection>
+    fn try_into_collection_as_type<ArrowType>(self) -> Result<Collection, arrow_schema::ArrowError>
     where
         ArrowType: ArrowDeserialize + ArrowField<Type = Element> + 'static;
     //  <ArrowType as ArrowDeserialize>::ArrayType: ArrowArrayIterable;
 }
 
-/// Helper to return an iterator for elements from a [`arrow::array::Array`].
+/// Helper to return an iterator for elements from a [`arrow_array::Array`].
 fn arrow_array_deserialize_iterator_internal<Element, Field>(b: &dyn Array) -> impl Iterator<Item = Element> + '_
 where
     Field: ArrowDeserialize + ArrowField<Type = Element> + 'static,
@@ -396,17 +393,17 @@ where
         .map(<Field as ArrowDeserialize>::arrow_deserialize_internal)
 }
 
-/// Returns a typed iterator to a target type from an `arrow::Array`
+/// Returns a typed iterator to a target type from an `arrow_array::Array`
 pub fn arrow_array_deserialize_iterator_as_type<Element, ArrowType>(
     arr: &dyn Array,
-) -> arrow::error::Result<impl Iterator<Item = Element> + '_>
+) -> Result<impl Iterator<Item = Element> + '_, arrow_schema::ArrowError>
 where
     Element: 'static,
     ArrowType: ArrowDeserialize + ArrowField<Type = Element> + 'static,
     <ArrowType as ArrowDeserialize>::ArrayType: ArrowArrayIterable,
 {
     if &<ArrowType as ArrowField>::data_type() != arr.data_type() {
-        Err(arrow::error::ArrowError::InvalidArgumentError(format!(
+        Err(arrow_schema::ArrowError::InvalidArgumentError(format!(
             "Data type mismatch. Expected type={:#?} is_nullable={}, but was type={:#?} is_nullable={}",
             &<ArrowType as ArrowField>::data_type(),
             &<ArrowType as ArrowField>::is_nullable(),
@@ -421,7 +418,9 @@ where
 }
 
 /// Return an iterator that deserializes an [`Array`] to an element of type T
-pub fn arrow_array_deserialize_iterator<T>(arr: &dyn Array) -> arrow::error::Result<impl Iterator<Item = T> + '_>
+pub fn arrow_array_deserialize_iterator<T>(
+    arr: &dyn Array,
+) -> Result<impl Iterator<Item = T> + '_, arrow_schema::ArrowError>
 where
     T: ArrowDeserialize + ArrowField<Type = T> + 'static,
     <T as ArrowDeserialize>::ArrayType: ArrowArrayIterable,
@@ -435,7 +434,7 @@ where
     ArrowArray: std::borrow::Borrow<dyn Array>,
     Collection: FromIterator<Element>,
 {
-    fn try_into_collection(self) -> arrow::error::Result<Collection>
+    fn try_into_collection(self) -> Result<Collection, arrow_schema::ArrowError>
     where
         Element: ArrowDeserialize + ArrowField<Type = Element> + 'static,
         <Element as ArrowDeserialize>::ArrayType: ArrowArrayIterable,
@@ -443,7 +442,7 @@ where
         Ok(arrow_array_deserialize_iterator::<Element>(self.borrow())?.collect())
     }
 
-    fn try_into_collection_as_type<ArrowType>(self) -> arrow::error::Result<Collection>
+    fn try_into_collection_as_type<ArrowType>(self) -> Result<Collection, arrow_schema::ArrowError>
     where
         ArrowType: ArrowDeserialize + ArrowField<Type = Element> + 'static,
         <ArrowType as ArrowDeserialize>::ArrayType: ArrowArrayIterable,

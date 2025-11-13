@@ -1,28 +1,26 @@
-use arrow::{
-    array::ArrayRef,
-    buffer::{Buffer, ScalarBuffer},
-};
+use arrow_array::ArrayRef;
+use arrow_buffer::{Buffer, ScalarBuffer};
 use arrow_convert::{
     deserialize::TryIntoCollection, serialize::TryIntoArrow, ArrowDeserialize, ArrowField, ArrowSerialize,
 };
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 
-// Arrow stores U8 arrays as `arrow::array::BinaryArray`
+// Arrow stores U8 arrays as `arrow_array::BinaryArray`
 #[derive(ArrowField, ArrowSerialize, ArrowDeserialize)]
 #[arrow_field(transparent)]
 pub struct BufU8Struct(Buffer);
 
-// Arrow stores other arrows as `arrow::array::ListArray`
+// Arrow stores other arrows as `arrow_array::ListArray`
 #[derive(ArrowField, ArrowSerialize, ArrowDeserialize)]
 #[arrow_field(transparent)]
 pub struct BufU32Struct(ScalarBuffer<u32>);
 
-// Arrow stores U8 arrows as `arrow::array::BinaryArray`
+// Arrow stores U8 arrows as `arrow_array::BinaryArray`
 #[derive(ArrowField, ArrowSerialize, ArrowDeserialize)]
 #[arrow_field(transparent)]
 pub struct VecU8Struct(Vec<u8>);
 
-// Arrow stores other arrows as `arrow::array::ListArray`
+// Arrow stores other arrows as `arrow_array::ListArray`
 #[derive(ArrowField, ArrowSerialize, ArrowDeserialize)]
 #[arrow_field(transparent)]
 pub struct VecU32Struct(Vec<u32>);

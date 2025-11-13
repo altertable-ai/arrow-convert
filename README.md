@@ -6,12 +6,12 @@ The Arrow ecosystem provides many ways to convert between Arrow and other popula
 
 ## Example
 
-The example below performs a round trip conversion of a struct with a single field. 
+The example below performs a round trip conversion of a struct with a single field.
 
 Please see the [complex_example.rs](https://github.com/Swoorup/arrow-convert/blob/main/arrow_convert/tests/complex_example.rs) for usage of the full functionality.
 
 ```rust
-use arrow::array::{Array, ArrayRef};
+use arrow_array::{Array, ArrayRef};
 use arrow_convert::{deserialize::TryIntoCollection, serialize::TryIntoArrow, ArrowField, ArrowSerialize, ArrowDeserialize};
 
 #[derive(Debug, Clone, PartialEq, ArrowField, ArrowSerialize, ArrowDeserialize)]
@@ -31,7 +31,7 @@ let arrow_array: ArrayRef = original_array.try_into_arrow().unwrap();
 
 // which can be cast to an Arrow StructArray and be used for all kinds of IPC, FFI, etc.
 // supported by `arrow`
-let struct_array= arrow_array.as_any().downcast_ref::<arrow::array::StructArray>().unwrap();
+let struct_array= arrow_array.as_any().downcast_ref::<arrow_array::StructArray>().unwrap();
 assert_eq!(struct_array.len(), 3);
 
 // deserialize back to our original vector via TryIntoCollection trait.
@@ -41,39 +41,39 @@ assert_eq!(round_trip_array, original_array);
 
 ## API
 
-Types that implement the `ArrowField`, `ArrowSerialize` and `ArrowDeserialize` traits can be converted to/from Arrow via the `try_into_arrow` and the `try_into_collection` methods. 
+Types that implement the `ArrowField`, `ArrowSerialize` and `ArrowDeserialize` traits can be converted to/from Arrow via the `try_into_arrow` and the `try_into_collection` methods.
 
 The `ArrowField`, `ArrowSerialize` and `ArrowDeserialize` derive macros can be used to generate implementations of these traits for structs and enums. Custom implementations can also be defined for any type that needs to convert to/from Arrow by manually implementing the traits.
 
-For serializing to arrow, `TryIntoArrow::try_into_arrow` can be used to serialize any iterable into an `arrow::Array` or a `arrow::Chunk`.  `arrow::Array` represents the in-memory Arrow layout. `arrow::Chunk` represents a column group and can be used with `arrow` API for other functionality such converting to parquet and arrow flight RPC.
+For serializing to arrow, `TryIntoArrow::try_into_arrow` can be used to serialize any iterable into an `arrow_array::Array` or a `arrow_array::Chunk`. `arrow_array::Array` represents the in-memory Arrow layout. `arrow_array::Chunk` represents a column group and can be used with `arrow` API for other functionality such converting to parquet and arrow flight RPC.
 
-For deserializing from arrow, the `TryIntoCollection::try_into_collection` can be used to deserialize from an `arrow::Array` representation into any container that implements `FromIterator`.
+For deserializing from arrow, the `TryIntoCollection::try_into_collection` can be used to deserialize from an `arrow_array::Array` representation into any container that implements `FromIterator`.
 
 ### Default implementations
 
 Default implementations of the above traits are provided for the following:
 
 - Numeric types
-    - [`u8`], [`u16`], [`u32`], [`u64`], [`i8`], [`i16`], [`i32`], [`i64`], [`f32`], [`f64`]
-    - [`i128`] is supported via the `type` attribute. Please see the [i128 section](#i128) for more details.
-- Other types: 
-    - [`bool`], [`String`], [`Binary`]
-- Temporal types: 
-    - [`chrono::NaiveDate`], [`chrono::NaiveDateTime`]
+  - [`u8`], [`u16`], [`u32`], [`u64`], [`i8`], [`i16`], [`i32`], [`i64`], [`f32`], [`f64`]
+  - [`i128`] is supported via the `type` attribute. Please see the [i128 section](#i128) for more details.
+- Other types:
+  - [`bool`], [`String`], [`Binary`]
+- Temporal types:
+  - [`chrono::NaiveDate`], [`chrono::NaiveDateTime`]
 - Option<T> if T implements `ArrowField`
 - Vec<T> if T implements `ArrowField`
 - `[T; SIZE]` if T implements `ArrowField`
 - Large Arrow types [`LargeBinary`], [`LargeString`], [`LargeList`] are supported via the `type` attribute. Please see the [complex_example.rs](./arrow_convert/tests/complex_example.rs) for usage.
 - Fixed size types [`FixedSizeBinary`], [`FixedSizeList`] are supported via the `FixedSizeVec` type override.
-    - Note: nesting of [`FixedSizeList`] is not supported.
+  - Note: nesting of [`FixedSizeList`] is not supported.
 - `TinyAsciiStr` from the [tinystr](https://github.com/zbraniecki/tinystr) crate (with the `tinystr` feature enabled)
 - `Decimal` from the [rust_decimal](https://github.com/paupino/rust-decimal) crate (with the `rust_decimal` feature enabled)
 - `Glam` vector and matrix types (with the `glam` feature enabled):
-    - `Vec2`, `Vec3`, `Vec4`
-    - `DVec2`, `DVec3`, `DVec4`
-    - `BVec2`, `BVec3`, `BVec4`
-    - `Mat2`, `Mat3`, `Mat4`
-    - `DMat2`, `DMat3`, `DMat4`
+  - `Vec2`, `Vec3`, `Vec4`
+  - `DVec2`, `DVec3`, `DVec4`
+  - `BVec2`, `BVec3`, `BVec4`
+  - `Mat2`, `Mat3`, `Mat4`
+  - `DMat2`, `DMat3`, `DMat4`
 
 ### Enums
 
@@ -83,7 +83,7 @@ Enums are still an experimental feature and need to be integrated tested. Rust e
 
 ### i128
 
-i128 represents a decimal number and requires the precision and scale to be specified to be used as an Arrow data type. The precision and scale can be specified by using a type override via the `I128` type. 
+i128 represents a decimal number and requires the precision and scale to be specified to be used as an Arrow data type. The precision and scale can be specified by using a type override via the `I128` type.
 
 For example to use `i128` as a field in a struct:
 
@@ -98,10 +98,10 @@ struct S {
 }
 ```
 
-A `vec<i128>` can be converted. to/from arrow by using the `arrow_serialize_to_mutable_array` and `arrow_array_deserialize_iterator_as_type` methods. 
+A `vec<i128>` can be converted. to/from arrow by using the `arrow_serialize_to_mutable_array` and `arrow_array_deserialize_iterator_as_type` methods.
 
 ```rust
-use arrow::array::{Array, ArrayBuilder, ArrayRef};
+use arrow_array::{Array, builder::ArrayBuilder, ArrayRef};
 use arrow_convert::serialize::arrow_serialize_to_mutable_array;
 use arrow_convert::deserialize::arrow_array_deserialize_iterator_as_type;
 use arrow_convert::field::I128;
@@ -118,15 +118,17 @@ fn convert_i128() {
 }
 
 ```
+
 ### Nested Option Types
 
-Since the Arrow format only supports one level of validity, nested option types such as `Option<Option<T>>`, after serialization to Arrow, will lose any intermediate nesting of None values. For example, `Some(None)` will be serialized to `None`, 
+Since the Arrow format only supports one level of validity, nested option types such as `Option<Option<T>>`, after serialization to Arrow, will lose any intermediate nesting of None values. For example, `Some(None)` will be serialized to `None`,
 
 ### Missing Features
 
 - Support for generics, slices and reference is currently missing.
 
 This is not an exhaustive list. Please open an issue if you need a feature.
+
 ## Memory
 
 Pass-thru conversions perform a single memory copy. Deserialization performs a copy from arrow to the destination. Serialization performs a copy from the source to arrow. In-place deserialization is theoretically possible but currently not supported.
@@ -139,7 +141,7 @@ The design is inspired by serde. The `ArrowSerialize` and `ArrowDeserialize` are
 
 However unlike serde's traits provide an exhaustive and flexible mapping to the serde data model, arrow_convert's traits provide a much more narrower mapping to arrow's data structures.
 
-Specifically, the `ArrowSerialize` trait provides the logic to serialize a type to the corresponding `arrow::array::ArrayBuilder`. The `ArrowDeserialize` trait deserializes a type from the corresponding `arrow::array::ArrowArray`. 
+Specifically, the `ArrowSerialize` trait provides the logic to serialize a type to the corresponding `arrow_array::builder::ArrayBuilder`. The `ArrowDeserialize` trait deserializes a type from the corresponding `arrow_array::ArrowArray`.
 
 ### Workarounds
 
@@ -155,8 +157,8 @@ As a result, we’re forced to sacrifice code reusability and introduce a little
 
 Licensed under either of
 
- * Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
- * MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
+- Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
+- MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
 
 at your option.
 

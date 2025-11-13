@@ -1,12 +1,11 @@
-use arrow::buffer::ScalarBuffer;
-use arrow::error::Result;
-use arrow::{array::*, buffer::Buffer};
+use arrow_array::*;
+use arrow_buffer::{buffer::Buffer, ScalarBuffer};
 use arrow_convert::field::ArrowField;
 use arrow_convert::{deserialize::*, serialize::*, ArrowDeserialize, ArrowField, ArrowSerialize};
 
 #[test]
 fn test_deserialize_iterator() {
-    use arrow::array::*;
+    use arrow_array::*;
     use arrow_convert::deserialize::*;
     use arrow_convert::serialize::*;
     use std::borrow::Borrow;
@@ -32,8 +31,8 @@ fn test_deserialize_iterator() {
     }
 }
 
-fn data_mismatch_error<Expected: ArrowField, Actual: ArrowField>() -> arrow::error::ArrowError {
-    arrow::error::ArrowError::InvalidArgumentError(format!(
+fn data_mismatch_error<Expected: ArrowField, Actual: ArrowField>() -> arrow_schema::ArrowError {
+    arrow_schema::ArrowError::InvalidArgumentError(format!(
         "Data type mismatch. Expected type={:#?} is_nullable={}, but was type={:#?} is_nullable={}",
         Expected::data_type(),
         Expected::is_nullable(),
@@ -55,7 +54,7 @@ fn test_deserialize_schema_mismatch_error() {
 
     let arr1 = vec![S1 { a: 1 }, S1 { a: 2 }];
     let arr1: ArrayRef = arr1.try_into_arrow().unwrap();
-    let result: Result<Vec<S2>> = arr1.try_into_collection();
+    let result: Result<Vec<S2>, arrow_schema::ArrowError> = arr1.try_into_collection();
     assert_eq!(
         result.unwrap_err().to_string(),
         data_mismatch_error::<S2, S1>().to_string()
@@ -63,7 +62,7 @@ fn test_deserialize_schema_mismatch_error() {
 
     let arr1 = vec![S1 { a: 1 }, S1 { a: 2 }];
     let arr1: ArrayRef = arr1.try_into_arrow().unwrap();
-    let result: Result<Vec<_>> = arr1.try_into_collection_as_type::<S2>();
+    let result: Result<Vec<_>, arrow_schema::ArrowError> = arr1.try_into_collection_as_type::<S2>();
     assert_eq!(
         result.unwrap_err().to_string(),
         data_mismatch_error::<S2, S1>().to_string()
@@ -85,7 +84,7 @@ fn test_deserialize_large_types_schema_mismatch_error() {
     let arr1 = vec![S1 { a: "123".to_string() }, S1 { a: "333".to_string() }];
     let arr1: ArrayRef = arr1.try_into_arrow().unwrap();
 
-    let result: Result<Vec<S2>> = arr1.try_into_collection();
+    let result: Result<Vec<S2>, arrow_schema::ArrowError> = arr1.try_into_collection();
     assert_eq!(
         result.unwrap_err().to_string(),
         data_mismatch_error::<S2, S1>().to_string()

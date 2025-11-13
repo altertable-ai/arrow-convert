@@ -1,7 +1,6 @@
-use arrow::datatypes::{Field, Schema};
-use arrow::record_batch::RecordBatch;
-use arrow::{array::*, datatypes::DataType};
+use arrow_array::*;
 use arrow_convert::{serialize::*, ArrowField, ArrowSerialize};
+use arrow_schema::{DataType, Field, Schema};
 use std::sync::Arc;
 
 #[test]

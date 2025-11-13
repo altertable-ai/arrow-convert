@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
-use arrow::datatypes::*;
 use arrow_convert::{field::DEFAULT_FIELD_NAME, ArrowField};
+use arrow_schema::{DataType, Field, Fields, TimeUnit};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -88,17 +88,17 @@ fn test_schema_types() {
     // impl arrow_convert::field::ArrowField for CustomType {
     //     type Type = Self;
 
-    //     fn data_type() -> arrow::datatypes::DataType {
-    //         arrow::datatypes::DataType::Extension(
+    //     fn data_type() -> arrow_schema::DataType {
+    //         arrow_schema::DataType::Extension(
     //             "custom".to_string(),
-    //             Arc::new(arrow::datatypes::DataType::UInt64),
+    //             Arc::new(arrow_schema::DataType::UInt64),
     //             None,
     //         )
     //     }
     // }
 
     // impl arrow_convert::serialize::ArrowSerialize for CustomType {
-    //     type ArrayBuilderType = arrow::array::UInt64Builder;
+    //     type ArrayBuilderType = arrow_array::builder::UInt64Builder;
 
     //     #[inline]
     //     fn new_array() -> Self::ArrayBuilderType {
@@ -109,13 +109,13 @@ fn test_schema_types() {
     //     fn arrow_serialize(
     //         _v: &Self,
     //         _array: &mut Self::ArrayBuilderType,
-    //     ) -> arrow::error::Result<()> {
+    //     ) -> Result<(), arrow_schema::ArrowError> {
     //         unimplemented!();
     //     }
     // }
 
     // impl arrow_convert::deserialize::ArrowDeserialize for CustomType {
-    //     type ArrayType = arrow::array::PrimitiveArray<UInt64Type>;
+    //     type ArrayType = arrow_array::PrimitiveArray<UInt64Type>;
 
     //     #[inline]
     //     fn arrow_deserialize(_v: Option<u64>) -> Option<Self> {

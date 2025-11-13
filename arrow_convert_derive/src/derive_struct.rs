@@ -118,8 +118,8 @@ pub fn expand_field(input: DeriveStruct) -> TokenStream {
     } else {
         quote! {
           impl #original_name {
-            pub fn arrow_schema() -> arrow::datatypes::Schema {
-                arrow::datatypes::Schema::new(vec![
+            pub fn arrow_schema() -> arrow_schema::Schema {
+                arrow_schema::Schema::new(vec![
                     #(
                         <#field_types as arrow_convert::field::ArrowField>::field(#field_names),
                     )*
@@ -138,7 +138,7 @@ pub fn expand_field(input: DeriveStruct) -> TokenStream {
                 <#ty as arrow_convert::field::ArrowField>::data_type()
             )
         } else {
-            quote!(arrow::datatypes::DataType::Struct(Self::arrow_schema().fields))
+            quote!(arrow_schema::DataType::Struct(Self::arrow_schema().fields))
         }
     };
 
@@ -148,7 +148,7 @@ pub fn expand_field(input: DeriveStruct) -> TokenStream {
         impl arrow_convert::field::ArrowField for #original_name {
             type Type = Self;
 
-            fn data_type() -> arrow::datatypes::DataType {
+            fn data_type() -> arrow_schema::DataType {
                 #data_type_impl
             }
         }
@@ -179,8 +179,8 @@ pub fn expand_serialize(input: DeriveStruct) -> TokenStream {
             #(
                 #field_idents: #mutable_field_array_types,
             )*
-            data_type: arrow::datatypes::DataType,
-            validity: Option<arrow::array::BooleanBufferBuilder>,
+            data_type: arrow_schema::DataType,
+            validity: Option<arrow_array::builder::BooleanBufferBuilder>,
         }
     };
 
@@ -195,14 +195,14 @@ pub fn expand_serialize(input: DeriveStruct) -> TokenStream {
             }
 
             fn init_validity(&mut self) {
-                let length = <Self as arrow::array::ArrayBuilder>::len(self);
-                let mut validity = arrow::array::BooleanBufferBuilder::new(length);
+                let length = <Self as arrow_array::builder::ArrayBuilder>::len(self);
+                let mut validity = arrow_array::builder::BooleanBufferBuilder::new(length);
                 validity.append_n(length - 1, true);
                 validity.append(false);
                 self.validity = Some(validity);
             }
 
-            fn data_type(&self) -> &arrow::datatypes::DataType {
+            fn data_type(&self) -> &arrow_schema::DataType {
                 &self.data_type
             }
 
@@ -210,12 +210,12 @@ pub fn expand_serialize(input: DeriveStruct) -> TokenStream {
                 self.try_push(None::<&#original_name>).unwrap();
             }
 
-            fn validity(&self) -> Option<&arrow::array::BooleanBufferBuilder> {
+            fn validity(&self) -> Option<&arrow_array::builder::BooleanBufferBuilder> {
                 self.validity.as_ref()
             }
 
-            fn try_push(&mut self, item: Option<impl std::borrow::Borrow<#original_name>>) -> arrow::error::Result<()> {
-                use arrow::array::ArrayBuilder;
+            fn try_push(&mut self, item: Option<impl std::borrow::Borrow<#original_name>>) -> Result<(), arrow_schema::ArrowError> {
+                use arrow_array::builder::ArrayBuilder;
                 use std::borrow::Borrow;
 
                 match item {
@@ -236,7 +236,7 @@ pub fn expand_serialize(input: DeriveStruct) -> TokenStream {
                 Ok(())
             }
 
-            fn try_extend<'a, I: IntoIterator<Item = Option<&'a #original_name>>>(&mut self, iter: I) -> arrow::error::Result<()> {
+            fn try_extend<'a, I: IntoIterator<Item = Option<&'a #original_name>>>(&mut self, iter: I) -> Result<(), arrow_schema::ArrowError> {
                 for i in iter {
                     self.try_push(i)?;
                 }
@@ -256,7 +256,7 @@ pub fn expand_serialize(input: DeriveStruct) -> TokenStream {
     let array_push_null_impl = quote! {
         impl arrow_convert::serialize::PushNull for #mutable_array_name {
             fn push_null(&mut self) {
-                use arrow::array::ArrayBuilder;
+                use arrow_array::builder::ArrayBuilder;
                 use arrow_convert::serialize::{ArrowSerialize, PushNull};
                 use std::borrow::Borrow;
 
@@ -278,41 +278,41 @@ pub fn expand_serialize(input: DeriveStruct) -> TokenStream {
     let first_ident = &field_idents[0];
 
     let array_mutable_array_impl = quote! {
-        impl arrow::array::ArrayBuilder for #mutable_array_name {
+        impl arrow_array::builder::ArrayBuilder for #mutable_array_name {
             fn len(&self) -> usize {
                 self.#first_ident.len()
             }
 
-            fn finish(&mut self) -> arrow::array::ArrayRef {
+            fn finish(&mut self) -> arrow_array::ArrayRef {
                 let values = vec![#(
-                    <#mutable_field_array_types as arrow::array::ArrayBuilder>::finish(&mut self.#field_idents),
+                    <#mutable_field_array_types as arrow_array::builder::ArrayBuilder>::finish(&mut self.#field_idents),
                 )*];
 
-                let arrow::datatypes::DataType::Struct(fields) =
+                let arrow_schema::DataType::Struct(fields) =
                   <#original_name as arrow_convert::field::ArrowField>::data_type()
                   .clone() else {
                     panic!("datatype is not struct")
                   };
 
-                std::sync::Arc::new(arrow::array::StructArray::new(
+                std::sync::Arc::new(arrow_array::StructArray::new(
                     fields,
                     values,
                     std::mem::take(&mut self.validity).map(|mut x| x.finish().into()),
                 ))
             }
 
-            fn finish_cloned(&self) -> arrow::array::ArrayRef {
+            fn finish_cloned(&self) -> arrow_array::ArrayRef {
                 let values = vec![#(
-                    <#mutable_field_array_types as arrow::array::ArrayBuilder>::finish_cloned(&self.#field_idents),
+                    <#mutable_field_array_types as arrow_array::builder::ArrayBuilder>::finish_cloned(&self.#field_idents),
                 )*];
 
-                let arrow::datatypes::DataType::Struct(fields) =
+                let arrow_schema::DataType::Struct(fields) =
                   <#original_name as arrow_convert::field::ArrowField>::data_type()
                   .clone() else {
                     panic!("datatype is not struct")
                   };
 
-                std::sync::Arc::new(arrow::array::StructArray::new(
+                std::sync::Arc::new(arrow_array::StructArray::new(
                     fields,
                     values,
                     self.validity.as_ref().map(|x| x.finish_cloned().into())
@@ -348,7 +348,7 @@ pub fn expand_serialize(input: DeriveStruct) -> TokenStream {
                 }
 
                 #[inline]
-                fn arrow_serialize(v: &Self, array: &mut Self::ArrayBuilderType) -> arrow::error::Result<()> {
+                fn arrow_serialize(v: &Self, array: &mut Self::ArrayBuilderType) -> Result<(), arrow_schema::ArrowError> {
                     <#first_type as arrow_convert::serialize::ArrowSerialize>::arrow_serialize(&v.#first_field, array)
                 }
             }
@@ -364,7 +364,7 @@ pub fn expand_serialize(input: DeriveStruct) -> TokenStream {
                 }
 
                 #[inline]
-                fn arrow_serialize(v: &Self, array: &mut Self::ArrayBuilderType) -> arrow::error::Result<()> {
+                fn arrow_serialize(v: &Self, array: &mut Self::ArrayBuilderType) -> Result<(), arrow_schema::ArrowError> {
                     array.try_push(Some(v))
                 }
             }
@@ -404,15 +404,15 @@ pub fn expand_deserialize(input: DeriveStruct) -> TokenStream {
     let array_impl = quote! {
         impl arrow_convert::deserialize::ArrowArray for #array_name
         {
-            type BaseArrayType = arrow::array::StructArray;
+            type BaseArrayType = arrow_array::StructArray;
 
             #[inline]
-            fn iter_from_array_ref<'a>(b: &'a dyn arrow::array::Array)  -> <Self as arrow_convert::deserialize::ArrowArrayIterable>::Iter<'a>
+            fn iter_from_array_ref<'a>(b: &'a dyn arrow_array::Array)  -> <Self as arrow_convert::deserialize::ArrowArrayIterable>::Iter<'a>
             {
                 use core::ops::Deref;
-                use arrow::array::Array;
+                use arrow_array::Array;
 
-                let arr = b.as_any().downcast_ref::<arrow::array::StructArray>().unwrap();
+                let arr = b.as_any().downcast_ref::<arrow_array::StructArray>().unwrap();
                 let values = arr.columns();
                 let validity = arr.nulls();
                 // for now do a straight comp
@@ -421,7 +421,7 @@ pub fn expand_deserialize(input: DeriveStruct) -> TokenStream {
                         #field_idents: <<#field_types as arrow_convert::deserialize::ArrowDeserialize>::ArrayType as arrow_convert::deserialize::ArrowArray>::iter_from_array_ref(values[#field_indices].deref()),
                     )*
                     has_validity: validity.as_ref().is_some(),
-                    validity_iter: validity.as_ref().map(|x| x.iter()).unwrap_or_else(|| arrow::util::bit_iterator::BitIterator::new(&[], 0, 0))
+                    validity_iter: validity.as_ref().map(|x| x.iter()).unwrap_or_else(|| arrow_buffer::bit_iterator::BitIterator::new(&[], 0, 0))
                 }
             }
         }
@@ -444,7 +444,7 @@ pub fn expand_deserialize(input: DeriveStruct) -> TokenStream {
             #(
                 #field_idents: <<#field_types as arrow_convert::deserialize::ArrowDeserialize>::ArrayType as arrow_convert::deserialize::ArrowArrayIterable>::Iter<'a>,
             )*
-            validity_iter: arrow::util::bit_iterator::BitIterator<'a>,
+            validity_iter: arrow_buffer::bit_iterator::BitIterator<'a>,
             has_validity: bool
         }
     };

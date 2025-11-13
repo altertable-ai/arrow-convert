@@ -1,11 +1,11 @@
 #[cfg(feature = "rust_decimal")]
 #[test]
 fn test_decimal_roundtrip() {
-    use arrow::array::{Array, ArrayRef};
-    use arrow::datatypes::DECIMAL_DEFAULT_SCALE;
-    use arrow::{array::Decimal128Array, datatypes::DECIMAL128_MAX_PRECISION};
+    use arrow_array::Decimal128Array;
+    use arrow_array::{Array, ArrayRef};
     use arrow_convert::deserialize::TryIntoCollection;
     use arrow_convert::serialize::*;
+    use arrow_schema::{DECIMAL128_MAX_PRECISION, DECIMAL_DEFAULT_SCALE};
     use pretty_assertions::assert_eq;
     use rust_decimal::Decimal;
 
@@ -41,11 +41,11 @@ fn test_decimal_roundtrip() {
 #[cfg(feature = "rust_decimal")]
 #[test]
 fn test_decimal_edge_values() {
-    use arrow::array::{Array, ArrayRef};
-    use arrow::datatypes::DECIMAL_DEFAULT_SCALE;
-    use arrow::{array::Decimal128Array, datatypes::DECIMAL128_MAX_PRECISION};
+    use arrow_array::Decimal128Array;
+    use arrow_array::{Array, ArrayRef};
     use arrow_convert::deserialize::TryIntoCollection;
     use arrow_convert::serialize::*;
+    use arrow_schema::{DECIMAL128_MAX_PRECISION, DECIMAL_DEFAULT_SCALE};
     use rust_decimal::Decimal;
 
     let original: Vec<Decimal> = vec![
